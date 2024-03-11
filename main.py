@@ -8,6 +8,7 @@ prefix = "!"
 intents = discord.Intents.default()
 intents.members = True
 intents.messages = True
+intents.message_content = True
 
 client = commands.Bot(command_prefix=prefix, intents=intents)
 
