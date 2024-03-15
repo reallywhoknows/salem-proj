@@ -3,7 +3,7 @@ import json
 import discord
 from discord.ext import commands
 from colorama import Fore, Style
-
+#docker run -d --name salem --restart unless-stopped container_id
 prefix = "!"
 intents = discord.Intents.default()
 intents.members = True
