@@ -24,7 +24,7 @@ class listener(commands.Cog):
         # Use rowid as a ticket number
         ticket_number = str(res[0][0])
         title = title + ticket_number
-        thread = await channel.create_thread(name=title, content="test")
+        thread = await channel.create_thread(name=title, content=f"**Dear <@328236370462113792>, <@{user.id}> has reported the following...**")
 
         # Update empty entry with newly generated ticket
         cursor.execute(f'''UPDATE tickets SET thread_id="{thread.id}" WHERE rowid="{ticket_number}"''')
@@ -60,7 +60,6 @@ class listener(commands.Cog):
         # Creates ticket for first time ticket creators
         if res.fetchall() == []:
             open_ticket = await listener.generate_ticket(user, connection, cursor, channel)
-            await open_ticket.send(f"**Dear <@328236370462113792>, <@{message.author.id}> has reported the following...**")
         else:
             #Grabs any tickets by thread id if the user has created one before
             res = cursor.execute(f'''SELECT thread_id FROM tickets WHERE user_id="{user.id}"''')
@@ -75,7 +74,6 @@ class listener(commands.Cog):
         # Creates new ticket if all other tickets are closed.
         if open_ticket == None:
             open_ticket = await listener.generate_ticket(user, connection, cursor, channel)
-            await open_ticket.send(f"**Dear <@328236370462113792>, <@{message.author.id}> has reported the following...**")
 
         # Content handler
         # Check if message is empty & if there are attachments
