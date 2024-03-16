@@ -7,29 +7,6 @@ import sqlite3
 class listener(commands.Cog):
     def __init__(self,client):
         self.client = client
-
-    @staticmethod
-    async def generate_ticket(user, connection, cursor, channel):
-        #Template for ticket before associating an ID
-        title = "ticket-"
-
-        # Generate a new empty ticket entry to get a new ticket ID
-        cursor.execute(f'''INSERT INTO tickets VALUES (NULL,"{user.id}",NULL)''')
-        connection.commit()
-
-        # Grab the new empty entry not yet associated with a thread ID
-        res = cursor.execute(f'''SELECT * FROM tickets WHERE user_id="{user.id}" AND thread_id IS NULL''')
-        res = res.fetchall()
-
-        # Use rowid as a ticket number
-        ticket_number = str(res[0][0])
-        title = title + ticket_number
-        thread = await channel.create_thread(name=title, content=f"**Dear <@328236370462113792>, <@{user.id}> has reported the following...**")
-
-        # Update empty entry with newly generated ticket
-        cursor.execute(f'''UPDATE tickets SET thread_id="{thread.id}" WHERE rowid="{ticket_number}"''')
-        connection.commit()
-        return thread
     
     @commands.Cog.listener()
     async def on_message(self,message):
@@ -87,26 +64,35 @@ class listener(commands.Cog):
             for i in message.attachments:
                 await open_ticket.send(i.url)
 
-
-
-
-
-
-
-
-
-
-
-
-        res = cursor.execute(f'''SELECT * FROM tickets WHERE user_id="{user.id}"''')
-        print(res.fetchall())
-
         # Gather User variables
 
-        # commit data to db
-        connection.commit()
+        # Close DB connections
         cursor.close()
         connection.close()
 
+    @staticmethod
+    async def generate_ticket(user, connection, cursor, channel):
+        #Template for ticket before associating an ID
+        title = "ticket-"
+
+        # Generate a new empty ticket entry to get a new ticket ID
+        cursor.execute(f'''INSERT INTO tickets VALUES (NULL,"{user.id}",NULL)''')
+        connection.commit()
+
+        # Grab the new empty entry not yet associated with a thread ID
+        res = cursor.execute(f'''SELECT * FROM tickets WHERE user_id="{user.id}" AND thread_id IS NULL''')
+        res = res.fetchall()
+
+        # Use rowid as a ticket number
+        ticket_number = str(res[0][0])
+        title = title + ticket_number
+        thread = await channel.create_thread(name=title)
+        await thread.send(f"**Dear <@328236370462113792>, <@{user.id}> has reported the following...**")
+
+        # Update empty entry with newly generated ticket
+        cursor.execute(f'''UPDATE tickets SET thread_id="{thread.id}" WHERE rowid="{ticket_number}"''')
+        connection.commit()
+        return thread
+    
 def setup(client):
     client.add_cog(listener(client))
