@@ -45,9 +45,11 @@ class listener(commands.Cog):
                     thread = channel.get_thread(thread_id)
                 
                 # Checks if any of the tickets the user previously created are open
-                if not thread.locked:
+                if thread == None:
+                    pass
+                elif not thread.locked:
                     open_ticket = thread
-                    
+
             # Creates new ticket if all other tickets are closed.
             if open_ticket == None:
                 open_ticket = await listener.generate_ticket(user, connection, cursor, channel)
