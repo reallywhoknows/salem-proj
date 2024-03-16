@@ -50,7 +50,7 @@ class listener(commands.Cog):
 
         # Working variables
         guild = self.client.get_guild(1087515364017066135)
-        channel = discord.utils.get(guild.channels, name="report")
+        channel = discord.utils.get(guild.channels, name="tickets")
         user = message.author
         open_ticket = None
 
@@ -77,11 +77,14 @@ class listener(commands.Cog):
             open_ticket = await listener.generate_ticket(user, connection, cursor, channel)
             await open_ticket.send(f"**Dear <@328236370462113792>, <@{message.author.id}> has reported the following...**")
 
+        # Content handler
+        # Check if message is empty & if there are attachments
         if message.content == "":
             for i in message.attachments:
                 await open_ticket.send(i.url)
                 return
 
+        # Sends message content and attachments if there are any
         await open_ticket.send(f"{message.content}")
         for i in message.attachments:
             await open_ticket.send(i.url)
