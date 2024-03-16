@@ -59,7 +59,8 @@ class listener(commands.Cog):
 
         # Creates ticket for first time ticket creators
         if res.fetchall() == []:
-            open_ticket = await listener.generate_ticket(user, connection, cursor, channel)      
+            open_ticket = await listener.generate_ticket(user, connection, cursor, channel)
+            await open_ticket.send(f"**Dear <@328236370462113792>, <@{message.author.id}> has reported the following...**")
         else:
             #Grabs any tickets by thread id if the user has created one before
             res = cursor.execute(f'''SELECT thread_id FROM tickets WHERE user_id="{user.id}"''')
@@ -74,9 +75,16 @@ class listener(commands.Cog):
         # Creates new ticket if all other tickets are closed.
         if open_ticket == None:
             open_ticket = await listener.generate_ticket(user, connection, cursor, channel)
+            await open_ticket.send(f"**Dear <@328236370462113792>, <@{message.author.id}> has reported the following...**")
 
+        if message.content == "":
+            for i in message.attachments:
+                await open_ticket.send(i.url)
+                return
 
-
+        await open_ticket.send(f"{message.content}")
+        for i in message.attachments:
+            await open_ticket.send(i.url)
 
 
 
