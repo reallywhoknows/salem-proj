@@ -8,6 +8,29 @@ class listener(commands.Cog):
     def __init__(self,client):
         self.client = client
 
+    @staticmethod
+    async def generate_ticket(user, connection, cursor, channel):
+        #Template for ticket before associating an ID
+        title = "ticket-"
+
+        # Generate a new empty ticket entry to get a new ticket ID
+        cursor.execute(f'''INSERT INTO tickets VALUES (NULL,"{user.id}",NULL)''')
+        connection.commit()
+
+        # Grab the new empty entry not yet associated with a thread ID
+        res = cursor.execute(f'''SELECT * FROM tickets WHERE user_id="{user.id}" AND thread_id IS NULL''')
+        res = res.fetchall()
+
+        # Use rowid as a ticket number
+        ticket_number = str(res[0][0])
+        title = title + ticket_number
+        thread = await channel.create_thread(name=title, content="test")
+
+        # Update empty entry with newly generated ticket
+        cursor.execute(f'''UPDATE tickets SET thread_id="{thread.id}" WHERE rowid="{ticket_number}"''')
+        connection.commit()
+        return thread
+    
     @commands.Cog.listener()
     async def on_message(self,message):
         #Check if user is bot
@@ -21,34 +44,28 @@ class listener(commands.Cog):
         # Establish connection to db
         connection = sqlite3.connect("db//tickets.db")
         cursor = connection.cursor()
-        
-        #       tickets
-        # --------------------- 
-        # | user_id |thread_id |
-        # ---------------------
 
-        connection.execute('''CREATE TABLE IF NOT EXISTS tickets (user_id TEXT, thread_id TEXT)''')
+        # Generate table
+        connection.execute('''CREATE TABLE IF NOT EXISTS tickets (rowid INTEGER PRIMARY KEY, user_id TEXT, thread_id TEXT)''')
 
-        # Working guild
+        # Working variables
         guild = self.client.get_guild(1087515364017066135)
         channel = discord.utils.get(guild.channels, name="report")
         user = message.author
-        title = f"{message.author.name}'s report"
         open_ticket = None
 
         # Queries DB looking for if the user has ever made at ticket
         res = cursor.execute(f'''SELECT user_id FROM tickets WHERE user_id="{user.id}"''')
 
-        # Creates entry for first time ticket-submitters
+        # Creates ticket for first time ticket creators
         if res.fetchall() == []:
-            thread = await channel.create_thread(name=title, content="test")
-            cursor.execute(f'''INSERT INTO tickets VALUES ("{user.id}","{thread.id}")''')
-
-        # Grabs any tickets by thread id if the user has created one before
-        res = cursor.execute(f'''SELECT thread_id FROM tickets WHERE user_id="{user.id}"''')
-        for r in res.fetchall():
-            thread_id = int(r[0])
-            thread = channel.get_thread(thread_id)
+            open_ticket = await listener.generate_ticket(user, connection, cursor, channel)      
+        else:
+            #Grabs any tickets by thread id if the user has created one before
+            res = cursor.execute(f'''SELECT thread_id FROM tickets WHERE user_id="{user.id}"''')
+            for r in res.fetchall():
+                thread_id = int(r[0])
+                thread = channel.get_thread(thread_id)
             
             # Checks if any of the tickets the user previously created are open
             if not thread.locked:
@@ -56,9 +73,7 @@ class listener(commands.Cog):
                 
         # Creates new ticket if all other tickets are closed.
         if open_ticket == None:
-            print("All locked")
-
-
+            open_ticket = await listener.generate_ticket(user, connection, cursor, channel)
 
 
 
@@ -76,6 +91,7 @@ class listener(commands.Cog):
 
         res = cursor.execute(f'''SELECT * FROM tickets WHERE user_id="{user.id}"''')
         print(res.fetchall())
+
         # Gather User variables
 
         # commit data to db
