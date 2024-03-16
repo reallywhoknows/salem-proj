@@ -66,9 +66,9 @@ class listener(commands.Cog):
 
         # Gather User variables
 
-        # Close DB connections
-        cursor.close()
-        connection.close()
+            # Close DB connections
+            cursor.close()
+            connection.close()
 
     @staticmethod
     async def generate_ticket(user, connection, cursor, channel):
